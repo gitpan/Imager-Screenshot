@@ -1,0 +1,13 @@
+\.svn
+vc60\.pdb
+^blib
+\.def$
+\.old$
+^Makefile$
+\.bs$
+^pm_to_blib$
+~$
+\.obj$
+\.o$
+\.bak$
+^Screenshot.c$
