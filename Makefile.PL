@@ -5,6 +5,13 @@ use Imager 0.54;
 use Imager::ExtUtils;
 use Config;
 use File::Spec;
+use Getopt::Long;
+
+my @incpaths; # places to look for headers
+my @libpaths; # places to look for libraries
+
+GetOptions("incpath=s", \@incpaths,
+           "libpath=s" => \@libpaths);
 
 my @objs = qw/Screenshot.o/;
 my @cflags;
@@ -12,13 +19,15 @@ my @lflags;
 my %seen_incdir;
 my %seen_libdir;
 my $X11_lib = $^O eq 'cygwin' ? 'X11.dll' : 'X11';
-if (find_header("X11/Xlib.h") and find_lib($X11_lib)) {
+if (find_header("X11/Xlib.h", "X11 header") 
+    and find_lib($X11_lib, "X11 library")) {
   push @objs, 'scx11.o';
   push @cflags, '-DSS_X11';
   push @lflags, '-l'.$X11_lib;
   print "Found X11\n";
 }
-if (find_header('windows.h') and find_lib('gdi32')) {
+if (find_header('windows.h', "Win32 header")
+    and find_lib('gdi32', "Win32 library")) {
   push @objs, 'scwin32.o';
   push @cflags, '-DSS_WIN32';
   if ($^O eq 'cygwin') {
@@ -28,7 +37,14 @@ if (find_header('windows.h') and find_lib('gdi32')) {
 }
 
 unless (@objs > 1) {
-  die "NA: Sorry, I can't find headers or libraries for a supported GUI\n"
+  die <<DEAD;
+
+NA: Sorry, I can't find headers or libraries for a supported GUI
+You need to install development headers and libraries for your GUI
+For Win32: Platform SDK or a substitute
+For X11: X11 headers and libraries, eg. the libX11-dev package on Debian
+
+DEAD
 }
 
 my %opts = 
@@ -56,8 +72,16 @@ if ($eu_mm_version > 6.06) {
 # LICENSE was introduced in 6.30_01, but Debian etch includes
 # (as of 2007/01/12) an ExtUtils::MakeMaker versioned 6.30_01 without
 # LICENSE support
+# EXTRA_META was also introduced in 6.30_01
 if ($eu_mm_version > 6.3001) {
   $opts{LICENSE} = 'perl';
+  $opts{EXTRA_META} = <<META;
+configure_requires:
+  Imager: 0.54
+build_requires:
+  Imager: 0.54
+  Test::More: 0.47
+META
 }
 
 WriteMakefile(%opts);
@@ -66,6 +90,9 @@ my @incs;
 sub header_search_path {
   @incs and return @incs;
 
+  push @incs, map {; split /\Q$Config{path_sep}/ } @incpaths;
+  push @incs, split /\Q$Config{path_sep}/, $ENV{IM_INCPATH}
+    if defined $ENV{IM_INCPATH};
   push @incs, '/usr/include', '/usr/X11R6/include'
     unless $^O eq 'MSWin32' && $Config{cc} =~ /\bcl\b/;
   push @incs, split /\Q$Config{path_sep}/, $ENV{INCLUDE}
@@ -86,6 +113,9 @@ my @libs;
 sub library_search_path {
   @libs and return @libs;
 
+  push @libs, map {; split /\Q$Config{path_sep}/ } @libpaths;
+  push @incs, split /\Q$Config{path_sep}/, $ENV{IM_LIBPATH}
+    if defined $ENV{IM_LIBPATH};
   push @libs, '/usr/lib', '/usr/X11R6/lib'
     unless $^O eq 'MSWin32' && $Config{cc} =~ /\bcl\b/;
   push @libs, split /\Q$Config{path_sep}/, $ENV{LIB}
@@ -102,7 +132,6 @@ sub library_search_path {
   @libs;
 }
 
-
 sub _find_file {
   my ($name, @where) = @_;
 
@@ -110,28 +139,43 @@ sub _find_file {
 }
 
 sub find_header {
+  my ($name, $description) = @_;
   my @found = _find_file($_[0], header_search_path());
 
   if (@found) {
-      push @cflags, "-I$_" for grep !$seen_incdir{$_}, @found;
-      @seen_incdir{@found} = (1) x @found;
+    push @cflags, "-I$_" for grep !$seen_incdir{$_}, @found;
+    @seen_incdir{@found} = (1) x @found;
+  }
+  else {
+    print STDERR "Could not find $name ($description)\n";
   }
 
   @found;
 }
 
 sub find_lib {
-  my $name = shift;
+  my ($name, $description) = shift;
   my @found;
+  my $libname;
   if ($^O eq 'MSWin32' && $Config{_a} eq '.lib') {
-    @found = _find_file($name . $Config{_a}, library_search_path());
+    $libname = $name . $Config{_a};
+    @found = _find_file($libname, library_search_path());
   }
   else {
-    @found = _find_file("lib" . $name . $Config{_a}, library_search_path());
+    $libname = "lib" . $name . $Config{_a};
+    @found = _find_file($libname, library_search_path());
+    if (!@found && $Config{so}) {
+      $libname = "lib" . $name . "." . $Config{so};
+      @found = _find_file($libname, library_search_path());
+    }
   }
   if (@found) {
     push @lflags, "-L$_" for grep !$seen_libdir{$_}, @found;
     @seen_libdir{@found} = (1) x @found;
   }
+  else {
+    print STDERR "Could not find $libname ($description)\n";
+  }
+
   @found;
 }
