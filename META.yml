@@ -1,19 +1,25 @@
 --- #YAML:1.0
-name:                Imager-Screenshot
-version:             0.007
-abstract:            Screen/Window capture to Imager images
-license:             perl
-author:              
+name:               Imager-Screenshot
+version:            0.008
+abstract:           Screen/Window capture to Imager images
+author:
     - Tony Cook <tonyc@cpan.org>
-generated_by:        ExtUtils::MakeMaker version 6.44
-distribution_type:   module
-requires:     
-    Imager:                        0.54
-meta-spec:
-    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
-    version: 1.3
+license:            perl
+distribution_type:  module
 configure_requires:
-  Imager: 0.54
+    ExtUtils::MakeMaker:  0
+    Imager:               0.54
 build_requires:
-  Imager: 0.54
-  Test::More: 0.47
+    ExtUtils::MakeMaker:  0
+    Imager:               0.54
+    Test::More:           0.47
+requires:
+    Imager:  0.54
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.54
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4
