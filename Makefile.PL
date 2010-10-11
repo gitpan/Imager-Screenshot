@@ -18,6 +18,7 @@ GetOptions("incpath=s", \@incpaths,
 my @objs = qw/Screenshot.o/;
 my @cflags;
 my @lflags;
+my @lddlflags;
 my %seen_incdir;
 my %seen_libdir;
 my $X11_lib = $^O eq 'cygwin' ? 'X11.dll' : 'X11';
@@ -41,6 +42,14 @@ if (find_header('windows.h', "Win32 header")
   print "Found Win32\n";
 }
 
+if ($^O eq "darwin") {
+  # this test is overly simple
+  push @objs, "scdarwin.o";
+  push @cflags, "-DSS_DARWIN";
+  push @lddlflags, qw/-framework OpenGL -framework Cocoa/;
+  print "Found OS X\n";
+}
+
 unless (@objs > 1) {
   die <<DEAD;
 OS unsupported: Headers or libraries not found for a supported GUI
@@ -49,6 +58,7 @@ Sorry, I can't find headers or libraries for a supported GUI
 You need to install development headers and libraries for your GUI
 For Win32: Platform SDK or a substitute
 For X11: X11 headers and libraries, eg. the libX11-dev package on Debian
+For OS X: Install Xcode
 
 DEAD
 }
@@ -59,7 +69,7 @@ my %opts =
    VERSION_FROM => 'Screenshot.pm',
    OBJECT => "@objs",
    PREREQ_PM => {
-		 'Imager'    => 0.54,
+		 'Imager'    => 0.69,
 		},
    INC => Imager::ExtUtils->includes,
    TYPEMAPS => [ Imager::ExtUtils->typemap ],
@@ -68,7 +78,11 @@ my %opts =
 $opts{LIBS} = "@lflags" if @lflags;
 $opts{INC} .= " @cflags" if @cflags;
 
-# avoid "... isn't numberic in numeric gt ..." warnings for dev versions
+if (@lddlflags) {
+  $opts{LDDLFLAGS} = $Config{lddlflags} . " @lddlflags";
+}
+
+# avoid "... isn't numeric in numeric gt ..." warnings for dev versions
 my $eu_mm_version = eval $ExtUtils::MakeMaker::VERSION;
 if ($eu_mm_version > 6.06) {
   $opts{AUTHOR} = 'Tony Cook <tonyc@cpan.org>';
@@ -87,11 +101,11 @@ if ($eu_mm_version >= 6.46) {
     {
      configure_requires => 
      {
-      Imager => "0.54"
+      Imager => "0.69"
      },
      build_requires => 
      {
-      Imager => "0.54",
+      Imager => "0.69",
       "Test::More" => "0.47",
      }
     };

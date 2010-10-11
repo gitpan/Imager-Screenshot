@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Imager-Screenshot
-version:            0.009
+version:            0.009_001
 abstract:           Screen/Window capture to Imager images
 author:
     - Tony Cook <tonyc@cpan.org>
@@ -8,13 +8,13 @@ license:            perl
 distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
-    Imager:               0.54
+    Imager:               0.69
 build_requires:
     ExtUtils::MakeMaker:  0
-    Imager:               0.54
+    Imager:               0.69
     Test::More:           0.47
 requires:
-    Imager:  0.54
+    Imager:  0.69
 no_index:
     directory:
         - t
