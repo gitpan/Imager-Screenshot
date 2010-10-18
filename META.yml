@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Imager-Screenshot
-version:            0.009_001
+version:            0.010
 abstract:           Screen/Window capture to Imager images
 author:
     - Tony Cook <tonyc@cpan.org>
