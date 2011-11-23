@@ -107,7 +107,14 @@ if ($eu_mm_version >= 6.46) {
      {
       Imager => "0.69",
       "Test::More" => "0.47",
-     }
+     },
+     dynamic_config => 1,
+     resources =>
+     {
+      homepage => "http://imager.perl.org/",
+      repository => "git://git.imager.perl.org/imager-screenshot.git",
+      bugtracker => "http://rt.cpan.org/NoAuth/Bugs.html?Dist=Imager-Screenshot",
+     },
     };
 }
 
@@ -165,12 +172,22 @@ sub _find_file {
   grep -f File::Spec->catfile($_, $name), @where;
 }
 
+sub _quote_spaces {
+  my $path = shift;
+
+  if ($path =~ / /) {
+    return qq("$path");
+  }
+
+  return $path;
+}
+
 sub find_header {
   my ($name, $description) = @_;
   my @found = _find_file($_[0], header_search_path());
 
   if (@found) {
-    push @cflags, "-I$_" for grep !$seen_incdir{$_}, @found;
+    push @cflags, _quote_spaces("-I$_") for grep !$seen_incdir{$_}, @found;
     @seen_incdir{@found} = (1) x @found;
   }
   else {
@@ -197,7 +214,7 @@ sub find_lib {
     }
   }
   if (@found) {
-    push @lflags, "-L$_" for grep !$seen_libdir{$_}, @found;
+    push @lflags, _quote_spaces("-L$_") for grep !$seen_libdir{$_}, @found;
     @seen_libdir{@found} = (1) x @found;
   }
   else {
@@ -207,12 +224,3 @@ sub find_lib {
   @found;
 }
 
-# wrapper around assert lib that doesn't exit and doesn't die
-sub check_lib {
-  my (%opts) = @_;
-
-  my $title = delete $opts{title};
-  $title and print "Looking even harder for $title\n";
-
-  return eval { assert_lib(%opts); 1 };
-}
