@@ -10,17 +10,10 @@ push @ISA, 'Exporter';
 BEGIN {
   require Exporter;
   @ISA = qw(Exporter);
-  $VERSION = '0.012';
-  eval {
-    # try XSLoader first, DynaLoader has annoying baggage
-    require XSLoader;
-    XSLoader::load('Imager::Screenshot' => $VERSION);
-    1;
-  } or do {
-    require DynaLoader;
-    push @ISA, 'DynaLoader';
-    bootstrap Imager::Screenshot $VERSION;
-  }
+  $VERSION = '0.013';
+
+  require XSLoader;
+  XSLoader::load('Imager::Screenshot' => $VERSION);
 }
 
 sub screenshot {
